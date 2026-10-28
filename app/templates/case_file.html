@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<title>এক নথি — {{ case.case_id }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: "Noto Sans Bengali", sans-serif; color: #1a1a1a; font-size: 12.5px; line-height: 1.6; margin: 0; }
+  header { border-bottom: 3px solid #0b6e4f; padding-bottom: 8px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-end; }
+  h1 { margin: 0; font-size: 22px; color: #0b6e4f; }
+  .meta { text-align: right; font-size: 11px; color: #555; }
+  h2 { font-size: 14px; margin: 18px 0 6px; padding: 3px 8px; background: #e8f3ee; border-left: 4px solid #0b6e4f; }
+  table { width: 100%; border-collapse: collapse; }
+  td { border: 1px solid #ccc; padding: 5px 8px; vertical-align: top; }
+  td:first-child { width: 28%; background: #f7f7f7; font-weight: 600; }
+  .alert { border: 2px solid #b42318; background: #fef3f2; padding: 8px 10px; margin: 10px 0; }
+  .draft { white-space: pre-wrap; border: 1px solid #ccc; padding: 10px; }
+  .src { font-size: 11px; margin-bottom: 6px; }
+  .muted { color: #666; font-size: 11px; }
+  footer { margin-top: 24px; border-top: 1px solid #ccc; padding-top: 6px; font-size: 10.5px; color: #555; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>এক নথি</h1>
+    <div class="muted">আইনগত সহায়তার জন্য একক মামলা-নথি</div>
+  </div>
+  <div class="meta">নথি নং: <strong>{{ case.case_id }}</strong><br>তৈরি: {{ generated_at }}</div>
+</header>
+
+{% if case.escalated %}
+<div class="alert">
+  <strong>{% if case.escalated.urgent %}জরুরি — {% endif %}মানব সহায়তার জন্য পাঠানো হয়েছে।</strong>
+  কারণ: {{ case.escalated.reason }}. যোগাযোগ: ১৬৪৩০{% if case.escalated.urgent %}, ৯৯৯, ১০৯{% endif %}
+</div>
+{% endif %}
+
+<h2>ব্যক্তি ও সমস্যার তথ্য</h2>
+{% if facts %}
+<table>
+  {% for label, value in facts %}<tr><td>{{ label }}</td><td>{{ value }}</td></tr>{% endfor %}
+</table>
+{% else %}<p class="muted">এখনও কোনো তথ্য সংরক্ষণ করা হয়নি।</p>{% endif %}
+
+{% if case.documents %}
+<h2>প্রাপ্ত নথি</h2>
+{% for d in case.documents %}
+<table style="margin-bottom:8px">
+  <tr><td>নথির ধরন</td><td>{{ d.doc_type or "—" }}</td></tr>
+  {% if d.issuing_authority %}<tr><td>প্রদানকারী</td><td>{{ d.issuing_authority }}</td></tr>{% endif %}
+  {% if d.case_number %}<tr><td>মামলা নং</td><td>{{ d.case_number }}</td></tr>{% endif %}
+  {% if d.dates %}<tr><td>তারিখ</td><td>{% for k, v in d.dates.items() if v %}{{ k }}: {{ v }}{% if not loop.last %}; {% endif %}{% endfor %}</td></tr>{% endif %}
+  {% if d.what_it_asks %}<tr><td>নথিতে যা বলা হয়েছে</td><td>{{ d.what_it_asks }}</td></tr>{% endif %}
+  {% if d.summary_bn %}<tr><td>সারাংশ</td><td>{{ d.summary_bn }}</td></tr>{% endif %}
+</table>
+{% endfor %}
+{% endif %}
+
+{% if case.transcripts %}
+<h2>ব্যক্তির নিজের কথায় (ভয়েস নোট)</h2>
+{% for t in case.transcripts %}<p>“{{ t }}”</p>{% endfor %}
+{% endif %}
+
+<h2>বিনামূল্যে আইনগত সহায়তার যোগ্যতা</h2>
+{% if case.eligibility %}
+<p>
+  ফলাফল:
+  <strong>{% if case.eligibility.eligible == true %}সম্ভবত যোগ্য{% elif case.eligibility.eligible == false %}সম্ভবত যোগ্য নন{% else %}নিশ্চিত নয় — অফিসে যাচাই প্রয়োজন{% endif %}</strong>
+  {% if case.eligibility.reasons %}({{ case.eligibility.reasons | join(", ") }}){% endif %}
+</p>
+{% if not case.eligibility.rules_verified %}<p class="muted">এটি প্রাথমিক মূল্যায়ন। চূড়ান্ত সিদ্ধান্ত লিগ্যাল এইড অফিস নেবে।</p>{% endif %}
+{% else %}<p class="muted">যাচাই করা হয়নি।</p>{% endif %}
+
+<h2>কোথায় যাবেন</h2>
+{% if case.office %}
+<table>
+  <tr><td>অফিস</td><td>{{ case.office.office }}</td></tr>
+  {% if case.office.address %}<tr><td>ঠিকানা</td><td>{{ case.office.address }}</td></tr>{% endif %}
+  {% if case.office.phone %}<tr><td>ফোন</td><td>{{ case.office.phone }}</td></tr>{% endif %}
+  {% if case.office.hours %}<tr><td>সময়</td><td>{{ case.office.hours }}</td></tr>{% endif %}
+</table>
+{% endif %}
+<p>জাতীয় আইনগত সহায়তা হেল্পলাইন: <strong>১৬৪৩০</strong></p>
+
+{% if case.draft %}
+<h2>আবেদনের খসড়া</h2>
+<div class="draft">{{ case.draft.text }}</div>
+{% endif %}
+
+{% if case.sources %}
+<h2>আইনি উৎস</h2>
+{% for s in case.sources %}
+<div class="src"><strong>{{ s.source }}{% if s.section %}, {{ s.section }}{% endif %}</strong>{% if s.title %} — {{ s.title }}{% endif %}{% if s.url %}<br><span class="muted">{{ s.url }}</span>{% endif %}</div>
+{% endfor %}
+{% endif %}
+
+<footer>
+  এই নথিটি “এক নথি” সহকারী তৈরি করেছে। এটি আইনি পরামর্শ নয়; এটি আইনজীবী বা লিগ্যাল এইড অফিসারকে আপনার ঘটনা দ্রুত বুঝতে সাহায্য করার জন্য।
+  তথ্য যাচাই করে নিন।
+</footer>
+</body>
+</html>

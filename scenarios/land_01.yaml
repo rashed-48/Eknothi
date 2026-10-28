@@ -1,0 +1,11 @@
+id: land_01
+case_type: land_notice
+description: Farmer receives a notice about his land and does not understand it. Replace the text with a real (anonymised) notice photo via `image:`.
+turns:
+  - text: "আমার জমি নিয়ে একটা নোটিশ এসেছে, আমি পড়তে পারি না। আমি নারায়ণগঞ্জে থাকি।"
+    # image: scenarios/images/land_01.jpg
+expected:
+  case_type: land_notice
+  should_escalate: false
+  must_mention: ["16430"]
+  notes: Should ask for a photo of the notice, and state any deadline in it first.

@@ -1,0 +1,26 @@
+{
+  "verified": false,
+  "verified_by": null,
+  "source": "আইনগত সহায়তা প্রদান আইন, ২০০০ ও সংশ্লিষ্ট প্রবিধানমালা — TODO: add exact regulation name, year and section; have the lawyer verify",
+  "income_limit_bdt": null,
+  "income_period": "year",
+  "_todo": "Fill income_limit_bdt and income_period from the current regulation. Check every category below against the regulation and remove any that are not listed there. Then set verified=true and verified_by.",
+  "categories": {
+    "low_income": {"label_bn": "অসচ্ছল / আর্থিকভাবে অসমর্থ ব্যক্তি"},
+    "worker_low_income": {"label_bn": "স্বল্প আয়ের শ্রমিক"},
+    "woman_child_violence_victim": {"label_bn": "নির্যাতনের শিকার নারী বা শিশু"},
+    "destitute_woman": {"label_bn": "দুস্থ, স্বামী পরিত্যক্তা বা বিধবা নারী"},
+    "person_with_disability": {"label_bn": "প্রতিবন্ধী ব্যক্তি"},
+    "elderly_low_income": {"label_bn": "অসচ্ছল বয়স্ক ব্যক্তি"},
+    "trafficking_victim": {"label_bn": "মানব পাচারের শিকার ব্যক্তি"},
+    "acid_victim": {"label_bn": "এসিড দগ্ধ ব্যক্তি"},
+    "child": {"label_bn": "শিশু"},
+    "detained_without_lawyer": {"label_bn": "আইনজীবী নিয়োগে অসমর্থ আটক ব্যক্তি"}
+  },
+  "documents_to_bring": [
+    "জাতীয় পরিচয়পত্রের (NID) কপি",
+    "আপনার কাছে আসা নোটিশ / মামলার কাগজের কপি",
+    "সমস্যার সাথে সম্পর্কিত যেকোনো প্রমাণ (চুক্তিপত্র, বেতনের স্লিপ, দলিল, রসিদ)",
+    "এক নথি (এই মামলা-নথি)"
+  ]
+}

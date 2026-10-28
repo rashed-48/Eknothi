@@ -1,0 +1,11 @@
+[
+  {
+    "id": "example-1",
+    "case_type": "unpaid_wages",
+    "source": "Name of the Act / Regulation / official guide",
+    "section": "ধারা X",
+    "title": "Short title of what this section is about",
+    "text": "Paste the exact text of the section here (Bangla or English). Keep each chunk to one section or one procedure step.",
+    "url": "https://bdlaws.minlaw.gov.bd/..."
+  }
+]

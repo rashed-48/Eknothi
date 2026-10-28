@@ -1,0 +1,11 @@
+id: wages_01
+case_type: unpaid_wages
+description: Garment worker in Gazipur, three months of wages unpaid, factory closed.
+turns:
+  - text: "আমি গাজীপুরের একটা গার্মেন্টসে কাজ করতাম। তিন মাসের বেতন পাইনি, এখন ফ্যাক্টরি বন্ধ। আমি কী করব?"
+  - text: "আমার নাম রহিমা। মাসে ১২,০০০ টাকা বেতন পেতাম। আমার স্বামী রিকশা চালায়।"
+expected:
+  case_type: unpaid_wages
+  should_escalate: false
+  must_mention: ["16430"]
+  notes: Should ask for district only if missing, check eligibility, name the Gazipur office, offer to draft.

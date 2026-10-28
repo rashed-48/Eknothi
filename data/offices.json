@@ -1,0 +1,33 @@
+{
+  "_todo": "Fill address, phone and hours for 2-3 demo districts from nlaso.gov.bd, then set verified=true for each.",
+  "helpline": {
+    "name_bn": "জাতীয় আইনগত সহায়তা হেল্পলাইন",
+    "number": "16430"
+  },
+  "districts": {
+    "dhaka": {
+      "aliases": ["ঢাকা", "dhaka"],
+      "office": "জেলা লিগ্যাল এইড অফিস, ঢাকা",
+      "address": null,
+      "phone": null,
+      "hours": null,
+      "verified": false
+    },
+    "gazipur": {
+      "aliases": ["গাজীপুর", "gazipur"],
+      "office": "জেলা লিগ্যাল এইড অফিস, গাজীপুর",
+      "address": null,
+      "phone": null,
+      "hours": null,
+      "verified": false
+    },
+    "narayanganj": {
+      "aliases": ["নারায়ণগঞ্জ", "narayanganj"],
+      "office": "জেলা লিগ্যাল এইড অফিস, নারায়ণগঞ্জ",
+      "address": null,
+      "phone": null,
+      "hours": null,
+      "verified": false
+    }
+  }
+}

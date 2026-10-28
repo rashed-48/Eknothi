@@ -1,0 +1,11 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.20
+httpx==0.28.1
+openai==1.58.1
+python-dotenv==1.0.1
+jinja2==3.1.5
+pyyaml==6.0.2
+pytest==8.3.4
+# PDF case files (Bangla shaping needs a real browser engine):
+#   pip install playwright==1.49.1 && python -m playwright install chromium

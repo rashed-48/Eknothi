@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>এক নথি</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --green: #0b6e4f; --bg: #efeae2; --me: #d9fdd3; --bot: #fff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Noto Sans Bengali", system-ui, sans-serif; background: var(--bg); height: 100dvh; display: flex; flex-direction: column; }
+  header { background: var(--green); color: #fff; padding: 12px 16px; }
+  header h1 { margin: 0; font-size: 18px; }
+  header p { margin: 2px 0 0; font-size: 12px; opacity: .85; }
+  #log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; max-width: 760px; width: 100%; margin: 0 auto; }
+  .msg { max-width: 85%; padding: 8px 12px; border-radius: 8px; white-space: pre-wrap; line-height: 1.55; box-shadow: 0 1px 1px rgba(0,0,0,.08); }
+  .me { align-self: flex-end; background: var(--me); }
+  .bot { align-self: flex-start; background: var(--bot); }
+  .msg a { color: var(--green); font-weight: 600; }
+  .typing { opacity: .6; font-style: italic; }
+  form { display: flex; gap: 6px; padding: 10px 16px; background: #f0f2f5; max-width: 760px; width: 100%; margin: 0 auto; align-items: center; }
+  #text { flex: 1; padding: 10px 12px; border: none; border-radius: 20px; font: inherit; }
+  button, label.btn { border: none; background: var(--green); color: #fff; border-radius: 50%; width: 42px; height: 42px; font-size: 18px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
+  button.rec { background: #b42318; }
+  #image { display: none; }
+  #pending { font-size: 12px; color: #555; max-width: 760px; margin: 0 auto; padding: 0 16px; width: 100%; }
+</style>
+</head>
+<body>
+<header>
+  <h1>এক নথি · EkNothi</h1>
+  <p>আইনগত সহায়তা সহকারী — এটি আইনি পরামর্শ নয়। জরুরি হলে ১৬৪৩০</p>
+</header>
+<div id="log">
+  <div class="msg bot">আসসালামু আলাইকুম। আপনার সমস্যাটি লিখুন, ভয়েস নোট পাঠান, অথবা যে নোটিশ বা কাগজ পেয়েছেন তার ছবি দিন।</div>
+</div>
+<div id="pending"></div>
+<form id="f">
+  <label class="btn" title="ছবি">📎<input id="image" type="file" accept="image/*"></label>
+  <input id="text" placeholder="এখানে লিখুন..." autocomplete="off">
+  <button type="button" id="mic" title="ভয়েস নোট">🎤</button>
+  <button type="submit" title="পাঠান">➤</button>
+</form>
+<script>
+  const log = document.getElementById("log");
+  const form = document.getElementById("f");
+  const textEl = document.getElementById("text");
+  const imageEl = document.getElementById("image");
+  const mic = document.getElementById("mic");
+  const pending = document.getElementById("pending");
+
+  let userId;
+  try { userId = localStorage.getItem("eknothi_uid"); } catch (e) {}
+  if (!userId) {
+    userId = crypto.randomUUID();
+    try { localStorage.setItem("eknothi_uid", userId); } catch (e) {}
+  }
+
+  let audioBlob = null, recorder = null, chunks = [];
+
+  function add(text, who, files = []) {
+    const div = document.createElement("div");
+    div.className = "msg " + who;
+    div.textContent = text;
+    for (const f of files) {
+      const a = document.createElement("a");
+      a.href = f; a.target = "_blank"; a.textContent = "\n📄 এক নথি খুলুন";
+      div.appendChild(a);
+    }
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    return div;
+  }
+
+  function showPending() {
+    const parts = [];
+    if (imageEl.files[0]) parts.push("📎 " + imageEl.files[0].name);
+    if (audioBlob) parts.push("🎤 ভয়েস নোট প্রস্তুত");
+    pending.textContent = parts.join("  ·  ");
+  }
+  imageEl.addEventListener("change", showPending);
+
+  mic.addEventListener("click", async () => {
+    if (recorder && recorder.state === "recording") { recorder.stop(); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recorder = new MediaRecorder(stream);
+      chunks = [];
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.onstop = () => {
+        audioBlob = new Blob(chunks, { type: recorder.mimeType });
+        stream.getTracks().forEach(t => t.stop());
+        mic.classList.remove("rec");
+        showPending();
+      };
+      recorder.start();
+      mic.classList.add("rec");
+    } catch (e) { alert("মাইক্রোফোন চালু করা যায়নি।"); }
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = textEl.value.trim();
+    const image = imageEl.files[0];
+    if (!text && !image && !audioBlob) return;
+
+    const fd = new FormData();
+    fd.append("user_id", userId);
+    fd.append("text", text);
+    if (image) fd.append("image", image);
+    if (audioBlob) fd.append("audio", audioBlob, "voice.webm");
+
+    add([text, image && "📎 ছবি", audioBlob && "🎤 ভয়েস নোট"].filter(Boolean).join("\n"), "me");
+    textEl.value = ""; imageEl.value = ""; audioBlob = null; showPending();
+
+    const typing = add("লিখছে...", "bot typing");
+    try {
+      const res = await fetch("/api/chat", { method: "POST", body: fd });
+      const data = await res.json();
+      typing.remove();
+      add(data.reply, "bot", data.files || []);
+    } catch (err) {
+      typing.remove();
+      add("সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করুন।", "bot");
+    }
+  });
+</script>
+</body>
+</html>
