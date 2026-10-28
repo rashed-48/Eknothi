@@ -78,8 +78,9 @@ def retrieve_law(ctx: ToolContext, case_type: str, query: str, k: int = 4) -> di
             "monthly_income_bdt": {"type": "number", "description": "Household monthly income in taka, if known"},
             "categories": {
                 "type": "array",
-                "items": {"type": "string"},
-                "description": "Category keys from the eligibility rules that apply to the person",
+                # Listing the keys stops the model from inventing categories that never match.
+                "items": {"type": "string", "enum": list(_json("eligibility.json")["categories"])},
+                "description": "Eligibility categories that clearly apply to the person. Leave empty if unsure.",
             },
         },
     },

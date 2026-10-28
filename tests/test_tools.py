@@ -87,3 +87,24 @@ def test_case_file_html_contains_bangla_facts():
     case["facts"] = {"name": "রহিমা", "case_type": "unpaid_wages"}
     html = case_file.render_html(case)
     assert "রহিমা" in html and "বকেয়া মজুরি" in html and case["case_id"] in html
+
+
+def test_eligibility_categories_are_limited_to_known_keys():
+    schema = next(s for s in schemas() if s["function"]["name"] == "check_eligibility")
+    enum = schema["function"]["parameters"]["properties"]["categories"]["items"]["enum"]
+    assert "worker_low_income" in enum and "unpaid_wages" not in enum
+
+
+def test_draft_builds_case_file_without_markdown(monkeypatch):
+    from app import llm
+    monkeypatch.setattr(llm, "complete", lambda prompt, system=None: "**বিষয়:** আবেদন")
+    c = ctx()
+    result = execute("draft_application", '{"kind": "legal_aid_application"}', c)
+    assert result["case_file_ready"] and len(c.files) == 1
+    assert c.case["draft"]["text"] == "বিষয়: আবেদন"
+
+
+def test_whatsapp_format():
+    from app.agent import whatsapp_format
+    text = "## শিরোনাম\n**জরুরি:** ১৬৪৩০ বা ৯৯৯, কিন্তু ১৬৪৩০৫ নয়"
+    assert whatsapp_format(text) == "শিরোনাম\n*জরুরি:* 16430 বা 999, কিন্তু ১৬৪৩০৫ নয়"

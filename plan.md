@@ -2,7 +2,7 @@
 
 > **This file is the single source of truth for the project.**
 > Read it fully before starting any work. Update it after every piece of work (see §0).
-> Last updated: **2026-10-29** (Bangladesh time)
+> Last updated: **2026-10-29**, after first real conversation (Bangladesh time)
 
 ---
 
@@ -175,7 +175,7 @@ WhatsApp (Cloud API test number)      Web chat (web/index.html)
 | Optional: crop document from messy photo | SAM 3.1 | Meta Model API | (not yet) |
 | Optional: Bangla voice replies | Meta MMS-TTS (open, supports Bengali) | self-hosted | (not yet) |
 
-**Stand-in until the Muse key arrives:** any Llama model on an OpenAI-compatible endpoint (Groq / Together / OpenRouter / local Ollama). Must be fully removed before submission.
+**Stand-in until the Muse key arrives:** `openai/gpt-oss-120b` on Groq (`LLM_BASE_URL=https://api.groq.com/openai/v1`). Groq no longer serves Llama chat models, so this is not a Meta model — it must be fully removed before submission.
 
 ---
 
@@ -203,7 +203,7 @@ data/
 scenarios/         wages_01, land_01, family_01 (.yaml)
 eval/run_eval.py   runs scenarios → eval/results_*.csv with lawyer columns
 web/index.html     web chat (text, photo, voice)
-tests/test_tools.py 11 tests, no model needed
+tests/test_tools.py 14 tests, no model needed
 ```
 
 **Run:**
@@ -243,6 +243,11 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 | 10-29 | Data files ship with `verified: false` and null gaps | Never invent legal facts; bot says "preliminary" until verified |
 | 10-29 | 15–20 scenarios (not 30+) | Quality of lawyer review over quantity in 6 days |
 | 10-29 | MIT license, public repo | Rules require a public repo |
+| 10-29 | Stand-in model: `openai/gpt-oss-120b` on Groq (supersedes "a Llama stand-in") | The Groq account offers no Llama chat models (only Prompt Guard); gpt-oss-120b is the best tool-calling model there; stand-in only |
+| 10-29 | Rules that must always hold are enforced in code, not only in the prompt: WhatsApp formatting + helpline digits (`agent.whatsapp_format`), draft date, no markdown in drafts, case file built inside `draft_application` | The stand-in ignored these prompt rules in the first conversation |
+| 10-29 | Phone numbers always in English digits (16430, 999, 109) | Bangla digits are not tap-to-call in WhatsApp; eval `must_mention` checks "16430" |
+| 10-29 | `llm.chat` retries Groq `output_parse_failed` / `tool_use_failed` (2 retries) and 429s (`max_retries=5`) | Sampled output sometimes fails the host's parser/schema check; a retry fixes it. Provider quirk stays inside `llm.py` |
+| 10-29 | `check_eligibility.categories` is an enum built from `eligibility.json` | Model invented category keys (`unpaid_wages`, `monthly_income`) that never matched |
 
 ---
 
@@ -267,7 +272,16 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - [x] **README** — idea, architecture, model table, hackathon new-work statement, run instructions.
 
 **Verified:** 11 tests pass; server starts; `/health` 200; web page loads; webhook verification rejects wrong token; `/api/chat` without a model returns the Bangla fallback (no crash).
-**Not verified yet:** any real model conversation, WhatsApp end to end, PDF rendering.
+
+#### First real conversation (2026-10-29, stand-in `openai/gpt-oss-120b` on Groq)
+- [x] `.env` filled (Groq). Fixed: key had been pasted inside `<...>`; `llama-3.3-70b-versatile` not available → gpt-oss-120b.
+- [x] Garment-worker story (wages_01 + "yes, write the application") run through `agent.run` and through `POST /api/chat`.
+- [x] Tools called in the right order: `update_case`, `retrieve_law` (empty → says "not sure, call 16430"), `check_eligibility` (`worker_low_income`, preliminary), `find_office` (Gazipur), `draft_application` → case file built and attached (HTML; Playwright not installed yet).
+- [x] Fixes from the run: eligibility category enum; Groq parse/tool-validation retries; `whatsapp_format` (`**`→`*`, no `#`, helplines in English digits); fallback reply uses 16430; draft gets today's date (BD time), no markdown, no invented hardships; `draft_application` builds the case file; prompt: no unsourced procedure claims (with wrong/right example), 999/109 only for danger, no repeated tool calls.
+- [x] 3 new tests (eligibility enum, draft → case file without markdown, `whatsapp_format`) — 14 pass.
+- **Still wrong:** the model sometimes states procedure without a source (e.g. "must file in the labour court"). Needs legal data (D) + eval scenarios (G) to catch it; re-check on Muse.
+
+**Not verified yet:** WhatsApp end to end, PDF rendering, voice and photo input with a real model.
 
 ### 6.2 Not yet implemented — in order
 
@@ -276,14 +290,16 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - [ ] Submit the Meta credit claim form; add card on Billing; set $150 spend limit.
 - [ ] Request Baseten credits (and Modal as backup).
 - [ ] Contact the lawyer; agree review of ~20 answers on Nov 2–3; ask permission to name them.
-- [ ] Get a stand-in Llama API key; fill `.env`.
+- [x] Get a stand-in API key; fill `.env` — Groq, done 10-29.
 - [ ] Join Discord, post in #intros.
 
 #### B. First real conversation (stand-in model)
-- [ ] Fill `.env` (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`; a model that supports tool calling).
-- [ ] Chat in the web UI; confirm tools are called (check server logs `tool ...`).
-- [ ] Tune system prompt if the model skips tools or answers in English.
-- **Done when:** the wages story gets eligibility, office and a draft offer through tool calls.
+- [x] Fill `.env` (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`; a model that supports tool calling).
+- [x] Chat through the agent and `/api/chat`; tools are called (see §6.1 "First real conversation").
+- [x] Tune system prompt / add code guards (first pass).
+- [ ] Try it yourself in the browser at http://localhost:8000.
+- [ ] Web chat shows WhatsApp `*bold*` as raw asterisks — render it as bold in `web/index.html`.
+- **Done (10-29):** the wages story gets eligibility, office and a draft through tool calls.
 
 #### C. WhatsApp end to end
 - [ ] Meta developer app (Business) → WhatsApp → test number; add recipient numbers.
@@ -358,6 +374,9 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 | Does Muse Spark read Bangla legal documents well? | Untested | — |
 | Is the Meta Model API OpenAI-compatible? | Unknown — check quickstart | — |
 | Official legal aid income limit and categories | Unknown — from regulations, lawyer verifies | User + lawyer |
+| Stand-in model states procedure without a source | Seen in first conversation; prompt alone doesn't stop it. Legal data (D) + eval (G); re-check on Muse | — |
+| Groq free tier rate limits | Each turn waits on several 429 retries (~30–60 s). Fine for dev; not for demo | — |
+| Eligibility: any matched category → `eligible: true` regardless of income | Check with lawyer whether e.g. "স্বল্প আয়ের শ্রমিক" needs an income test | User + lawyer |
 
 ---
 
@@ -386,3 +405,7 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - Added this `plan.md` and `CLAUDE.md`.
 - User created https://github.com/rashed-48/Eknothi; added as `origin` and pushed `main`.
 - **Next:** fill `.env` with a stand-in model; first real conversation (§6.2 B); WhatsApp setup (§6.2 C).
+- **First real conversation (§6.2 B done).** `.env` on Groq; fixed key pasted in `<...>`; no Llama chat models on Groq → `openai/gpt-oss-120b`.
+  Ran the wages story three times + once over `POST /api/chat`. Run 1: crash on draft (Groq parse error), invented eligibility categories, `**` and Bangla-digit helplines. Run 2: worked end to end but invented a 3-month deadline, garbled 999, wrong draft date, invented facts in draft, no case file. Run 3 (after fixes): correct date, clean draft, case file attached, 16430 only; one remaining unsourced claim (labour court).
+  Verified: 14 tests pass; `/api/chat` turn 1 answers "not sure about the deadline, call 16430".
+  **Next:** user — Meta credit claim + spend limit, Baseten request, lawyer, WhatsApp test number (§6.2 A, C). Claude — legal data from official sources with `verified: false` (D), Playwright PDF check (E), web chat bold rendering.

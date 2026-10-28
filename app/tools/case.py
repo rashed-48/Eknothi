@@ -1,10 +1,13 @@
 """Tools that build up the case file (the "ek nothi")."""
 
 import json
+from datetime import datetime, timedelta, timezone
 
 from app import case_file, llm
 from app.prompts import DRAFT_PROMPT, DRAFT_SYSTEM
 from app.tools.registry import ToolContext, tool
+
+BANGLADESH_TZ = timezone(timedelta(hours=6))
 
 CASE_FIELDS = {
     "name": {"type": "string"},
@@ -31,7 +34,8 @@ def update_case(ctx: ToolContext, **facts) -> dict:
 
 
 @tool(
-    "Draft the person's free legal aid application (or complaint) in Bangla from the saved case facts.",
+    "Draft the person's free legal aid application (or complaint) in Bangla from the saved case facts. "
+    "The case file is rebuilt with the draft and sent with your reply.",
     {
         "type": "object",
         "properties": {"kind": {"type": "string", "enum": ["legal_aid_application", "complaint"]}},
@@ -43,14 +47,19 @@ def draft_application(ctx: ToolContext, kind: str) -> dict:
     draft = llm.complete(
         DRAFT_PROMPT.format(
             kind=kind_bn,
+            # The model doesn't know today's date and will make one up.
+            date=datetime.now(BANGLADESH_TZ).strftime("%d/%m/%Y"),
             district=ctx.case["facts"].get("district", "[........]"),
             facts=json.dumps(ctx.case["facts"], ensure_ascii=False, indent=2),
             documents=json.dumps(ctx.case["documents"], ensure_ascii=False, indent=2),
         ),
         system=DRAFT_SYSTEM,
     )
+    draft = draft.replace("**", "").strip()  # printed and handed in on paper, so no markdown
     ctx.case["draft"] = {"kind": kind, "text": draft}
-    return {"draft": draft}
+    # A draft is only useful in the case file, so build it here rather than trusting the model to.
+    build_case_file(ctx)
+    return {"draft": draft, "case_file_ready": True}
 
 
 @tool(

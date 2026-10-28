@@ -8,16 +8,19 @@ If the Meta Model API turns out not to be OpenAI-compatible, adapt this file onl
 import base64
 from functools import lru_cache
 
-from openai import OpenAI
+from openai import BadRequestError, OpenAI
 
 from app.config import settings
+
+PARSE_RETRIES = 2
 
 
 @lru_cache
 def _client(base_url: str, api_key: str) -> OpenAI:
     if not base_url or not api_key:
         raise RuntimeError("Model endpoint not configured. Set LLM_BASE_URL and LLM_API_KEY in .env")
-    return OpenAI(base_url=base_url, api_key=api_key)
+    # Free stand-in tiers rate-limit hard; the SDK backs off and retries on 429.
+    return OpenAI(base_url=base_url, api_key=api_key, max_retries=5)
 
 
 def chat(messages: list[dict], tools: list[dict] | None = None, **kwargs):
@@ -25,8 +28,16 @@ def chat(messages: list[dict], tools: list[dict] | None = None, **kwargs):
     args = {"model": settings.llm_model, "messages": messages, **kwargs}
     if tools:
         args["tools"] = tools
-    resp = _client(settings.llm_base_url, settings.llm_api_key).chat.completions.create(**args)
-    return resp.choices[0].message
+    client = _client(settings.llm_base_url, settings.llm_api_key)
+    for attempt in range(PARSE_RETRIES + 1):
+        try:
+            return client.chat.completions.create(**args).choices[0].message
+        except BadRequestError as e:
+            # Some hosts (Groq) reject a turn when the model's raw output can't be parsed into a
+            # message, or its tool arguments break the schema. The output is sampled, so a fresh
+            # attempt usually succeeds.
+            if e.code not in ("output_parse_failed", "tool_use_failed") or attempt == PARSE_RETRIES:
+                raise
 
 
 def complete(prompt: str, system: str | None = None, **kwargs) -> str:

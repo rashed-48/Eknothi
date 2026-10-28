@@ -7,6 +7,7 @@ Only user/assistant text is kept in history; facts live in the case file.
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -17,8 +18,22 @@ log = logging.getLogger(__name__)
 
 MAX_STEPS = 8
 FALLBACK_REPLY = (
-    "দুঃখিত, এই মুহূর্তে উত্তর দিতে সমস্যা হচ্ছে। জরুরি হলে জাতীয় আইনগত সহায়তা হেল্পলাইন ১৬৪৩০-এ ফোন করুন।"
+    "দুঃখিত, এই মুহূর্তে উত্তর দিতে সমস্যা হচ্ছে। জরুরি হলে জাতীয় আইনগত সহায়তা হেল্পলাইন 16430-এ ফোন করুন।"
 )
+
+
+# Helplines must be in English digits so WhatsApp makes them tap-to-call. The digit lookarounds
+# leave longer numbers alone.
+_HELPLINES = {"১৬৪৩০": "16430", "৯৯৯": "999", "১০৯": "109"}
+
+
+def whatsapp_format(text: str) -> str:
+    """Make model output safe for WhatsApp, whatever the model did with the formatting rules."""
+    text = re.sub(r"\*\*(.+?)\*\*", r"*\1*", text)
+    text = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
+    for bn, en in _HELPLINES.items():
+        text = re.sub(rf"(?<!\d){bn}(?!\d)", en, text)
+    return text.strip()
 
 
 @dataclass
@@ -75,7 +90,7 @@ def run(user_id: str, text: str = "", *, image: bytes | None = None, image_mime:
         for _ in range(MAX_STEPS):
             msg = llm.chat(messages, tools=tools.schemas())
             if not msg.tool_calls:
-                reply_text = msg.content or FALLBACK_REPLY
+                reply_text = whatsapp_format(msg.content or "") or FALLBACK_REPLY
                 break
             messages.append({
                 "role": "assistant",
