@@ -182,7 +182,7 @@ WhatsApp (Cloud API test number)      Web chat (web/index.html)
 ## 4. Repository and how to run
 
 - Local path: `E:\eknothi`
-- GitHub: `https://github.com/rashed-48/eknothi` (**not created yet**, see §8)
+- GitHub: https://github.com/rashed-48/Eknothi (public, `origin`, branch `main`)
 - Stack: Python 3.11, FastAPI, OpenAI SDK (as a generic client), SQLite, Jinja2, Playwright (PDF), httpx.
 
 ```
@@ -272,7 +272,7 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 ### 6.2 Not yet implemented — in order
 
 #### A. Setup and accounts (user)
-- [ ] Create GitHub repo `rashed-48/eknothi` (public, empty) and push `main`.
+- [x] Create GitHub repo https://github.com/rashed-48/Eknothi (public) and push `main` — done 10-29.
 - [ ] Submit the Meta credit claim form; add card on Billing; set $150 spend limit.
 - [ ] Request Baseten credits (and Modal as backup).
 - [ ] Contact the lawyer; agree review of ~20 answers on Nov 2–3; ask permission to name them.
@@ -352,7 +352,6 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 | Item | Status | Owner |
 |---|---|---|
 | Muse / Meta Model API key | **Waiting** (credits arrive in batches; ask in #questions if not by Oct 30) | User |
-| GitHub repo creation | **Blocked** — Claude's permissions don't allow creating a public repo; user creates it at github.com/new, then push | User |
 | Lawyer for review | Unknown — confirm contacted | User |
 | Baseten / Modal credits | Unknown — confirm requested | User |
 | Does Muse Voice Transcribe handle Bangla well? | Untested | — |
@@ -385,4 +384,5 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - Verified: 11 tests pass; server starts; web page loads; fallback works without a model.
 - Attempted to create the GitHub repo — blocked by permissions; user to create `rashed-48/eknothi` manually.
 - Added this `plan.md` and `CLAUDE.md`.
-- **Next:** user creates GitHub repo → push; fill `.env` with a stand-in model; first real conversation (§6.2 B); WhatsApp setup (§6.2 C).
+- User created https://github.com/rashed-48/Eknothi; added as `origin` and pushed `main`.
+- **Next:** fill `.env` with a stand-in model; first real conversation (§6.2 B); WhatsApp setup (§6.2 C).
