@@ -5,7 +5,7 @@ If Playwright is not installed, the HTML file is returned instead.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -13,6 +13,9 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from app.config import settings
 
 log = logging.getLogger(__name__)
+
+BANGLADESH_TZ = timezone(timedelta(hours=6))
+FONT_PATH = Path(__file__).parent / "fonts" / "NotoSansBengali.ttf"  # SIL OFL, see fonts/OFL.txt
 
 _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent / "templates"),
@@ -47,8 +50,12 @@ def render_html(case: dict) -> str:
         facts["case_type"] = CASE_TYPE_LABELS.get(facts["case_type"], facts["case_type"])
     return _env.get_template("case_file.html").render(
         case=case,
-        facts=[(FACT_LABELS.get(k, k), v) for k, v in facts.items()],
-        generated_at=datetime.now().strftime("%d/%m/%Y %H:%M"),
+        # Fixed order (name first), whatever order the model saved the facts in.
+        facts=[(FACT_LABELS.get(k, k), v)
+               for k, v in sorted(facts.items(), key=lambda kv: list(FACT_LABELS).index(kv[0])
+                                  if kv[0] in FACT_LABELS else len(FACT_LABELS))],
+        generated_at=datetime.now(BANGLADESH_TZ).strftime("%d/%m/%Y %H:%M"),
+        font_uri=FONT_PATH.resolve().as_uri(),
     )
 
 
@@ -68,7 +75,10 @@ def _to_pdf(src: Path, dst: Path) -> bool:
         with sync_playwright() as p:
             browser = p.chromium.launch()
             page = browser.new_page()
-            page.goto(src.resolve().as_uri(), wait_until="networkidle")
+            # Local files only: the bundled font makes the PDF identical online or offline, and fast.
+            page.route("**/*", lambda route: route.continue_() if route.request.url.startswith("file:")
+                       else route.abort())
+            page.goto(src.resolve().as_uri(), wait_until="load")
             page.pdf(path=str(dst), format="A4", print_background=True,
                      margin={"top": "16mm", "bottom": "16mm", "left": "14mm", "right": "14mm"})
             browser.close()

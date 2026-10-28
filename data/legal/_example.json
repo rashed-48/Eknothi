@@ -6,6 +6,13 @@
     "section": "ধারা X",
     "title": "Short title of what this section is about",
     "text": "Paste the exact text of the section here (Bangla or English). Keep each chunk to one section or one procedure step.",
-    "url": "https://bdlaws.minlaw.gov.bd/..."
+    "notes": [
+      "Amendment footnotes and in-force dates/districts from the source page, copied exactly"
+    ],
+    "keywords": [
+      "everyday words people use for this (বেতন, salary) that the legal text may not contain"
+    ],
+    "url": "https://bdlaws.minlaw.gov.bd/...",
+    "verified": false
   }
 ]

@@ -22,9 +22,19 @@ def test_all_tools_have_schemas():
 
 
 def test_retrieve_law_without_sources_refuses_to_guess():
-    result = execute("retrieve_law", '{"case_type": "unpaid_wages", "query": "বেতন পাইনি"}', ctx())
+    result = execute("retrieve_law", '{"case_type": "land_notice", "query": "রেলগাড়ি"}', ctx())
     assert result["results"] == []
     assert "16430" in result["note"]
+
+
+def test_retrieve_law_matches_everyday_words():
+    # The Act says মজুরী; people say বেতন. Keywords bridge the two.
+    c = ctx()
+    result = execute("retrieve_law", '{"case_type": "unpaid_wages", "query": "বেতন পাইনি মামলা কতদিন"}', c)
+    ids = [r["id"] for r in result["results"]]
+    assert "labour-132" in ids
+    assert all(r["verified"] is False for r in result["results"])
+    assert {s["id"] for s in c.case["sources"]} == set(ids)
 
 
 def test_eligibility_by_category():
@@ -106,5 +116,5 @@ def test_draft_builds_case_file_without_markdown(monkeypatch):
 
 def test_whatsapp_format():
     from app.agent import whatsapp_format
-    text = "## শিরোনাম\n**জরুরি:** ১৬৪৩০ বা ৯৯৯, কিন্তু ১৬৪৩০৫ নয়"
-    assert whatsapp_format(text) == "শিরোনাম\n*জরুরি:* 16430 বা 999, কিন্তু ১৬৪৩০৫ নয়"
+    text = "## শিরোনাম\n**জরুরি:** ১৬৪৩০ বা ৯৯৯, কিন্তু ১৬৪৩০৫ নয়\n```text\nখসড়া\n```"
+    assert whatsapp_format(text) == "শিরোনাম\n*জরুরি:* 16430 বা 999, কিন্তু ১৬৪৩০৫ নয়\n\nখসড়া"

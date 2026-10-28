@@ -61,7 +61,11 @@
   function add(text, who, files = []) {
     const div = document.createElement("div");
     div.className = "msg " + who;
-    div.textContent = text;
+    // Replies use WhatsApp formatting: *bold*. Build nodes instead of innerHTML so text stays text.
+    text.split(/\*([^*\n]+)\*/).forEach((part, i) => {
+      if (i % 2) { const b = document.createElement("b"); b.textContent = part; div.appendChild(b); }
+      else div.appendChild(document.createTextNode(part));
+    });
     for (const f of files) {
       const a = document.createElement("a");
       a.href = f; a.target = "_blank"; a.textContent = "\n📄 এক নথি খুলুন";

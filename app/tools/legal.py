@@ -52,12 +52,13 @@ def retrieve_law(ctx: ToolContext, case_type: str, query: str, k: int = 4) -> di
     for c in legal_chunks():
         if c.get("case_type") not in (case_type, "general"):
             continue
-        score = len(q & _tokens(c["text"] + " " + c.get("title", "")))
+        # Keywords hold everyday words (বেতন) that the formal legal text doesn't use (মজুরী).
+        score = len(q & _tokens(" ".join([c["text"], c.get("title", ""), *c.get("keywords", [])])))
         if score:
             scored.append((score, c))
     scored.sort(key=lambda s: s[0], reverse=True)
     results = [
-        {k_: c.get(k_) for k_ in ("id", "source", "section", "title", "text", "url")}
+        {k_: c.get(k_) for k_ in ("id", "source", "section", "title", "text", "notes", "url", "verified")}
         for _, c in scored[:k]
     ]
     known = {s["id"] for s in ctx.case["sources"]}

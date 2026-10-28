@@ -2,7 +2,7 @@
 
 > **This file is the single source of truth for the project.**
 > Read it fully before starting any work. Update it after every piece of work (see §0).
-> Last updated: **2026-10-29**, after first real conversation (Bangladesh time)
+> Last updated: **2026-10-29**, after legal data + PDF (Bangladesh time)
 
 ---
 
@@ -94,7 +94,7 @@ Event page: https://cerebralvalley.ai/e/meta-ai-developer-hackathon (participant
 ### 2.1 Problem
 - Over 4 million cases pending in Bangladesh's lower courts.
 - People with land disputes, unpaid wages, family problems or police notices cannot afford a lawyer; many cannot read the documents they receive.
-- Free government legal aid exists (NLASO, district legal aid offices, helpline **16430**), but people don't know they qualify, which office to go to, or what to bring. They pay middlemen, miss deadlines, give up, and must retell their story every time.
+- Free government legal aid exists (NLASO — since the 2026 amendment **বাংলাদেশ আইনগত সহায়তা অধিদপ্তর**; district legal aid offices; helpline **16430**), but people don't know they qualify, which office to go to, or what to bring. They pay middlemen, miss deadlines, give up, and must retell their story every time.
 
 ### 2.2 Users
 Low-income people in Bangladesh who use WhatsApp, may have low literacy, and speak Bangla. Demo persona: **a garment worker in Gazipur with three months of unpaid wages.**
@@ -198,12 +198,14 @@ app/
   main.py          routes: /health, /webhook/whatsapp (GET verify, POST), /api/chat, /files, / (web)
   tools/           registry.py (decorator + schemas + execute), legal.py, case.py
   templates/case_file.html
+  fonts/           NotoSansBengali.ttf (SIL OFL) — bundled so PDFs render offline
 data/
   eligibility.json offices.json legal/README.md legal/_example.json
+  legal/labour_act_2006_wages.json legal/legal_aid_act_2000.json  (exact text from bdlaws, verified:false)
 scenarios/         wages_01, land_01, family_01 (.yaml)
 eval/run_eval.py   runs scenarios → eval/results_*.csv with lawyer columns
 web/index.html     web chat (text, photo, voice)
-tests/test_tools.py 14 tests, no model needed
+tests/test_tools.py 15 tests, no model or network needed
 ```
 
 **Run:**
@@ -215,7 +217,7 @@ uvicorn app.main:app --reload # http://localhost:8000
 pytest                        # tests
 python -m eval.run_eval       # scenarios → CSV for lawyer
 ```
-PDF: `pip install playwright` then `python -m playwright install chromium`.
+PDF: Playwright is in requirements; also run `python -m playwright install chromium` once.
 WhatsApp local testing: `ngrok http 8000`, webhook URL `https://<ngrok>/webhook/whatsapp`.
 Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 
@@ -247,6 +249,11 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 | 10-29 | Rules that must always hold are enforced in code, not only in the prompt: WhatsApp formatting + helpline digits (`agent.whatsapp_format`), draft date, no markdown in drafts, case file built inside `draft_application` | The stand-in ignored these prompt rules in the first conversation |
 | 10-29 | Phone numbers always in English digits (16430, 999, 109) | Bangla digits are not tap-to-call in WhatsApp; eval `must_mention` checks "16430" |
 | 10-29 | `llm.chat` retries Groq `output_parse_failed` / `tool_use_failed` (2 retries) and 429s (`max_retries=5`) | Sampled output sometimes fails the host's parser/schema check; a retry fixes it. Provider quirk stays inside `llm.py` |
+| 10-29 | Legal chunks: exact bdlaws text; amendment markers `2[ত্রিশ]` resolved to the amended words; footnotes (amendments, SRO in-force districts) kept in `notes`; bdlaws font-conversion typos kept as published | "Copy exactly" while staying readable; in-force info is needed per district |
+| 10-29 | `keywords` field on legal chunks, scored by `retrieve_law` | Users say বেতন, the Act says মজুরী; plain keyword overlap missed every wages question |
+| 10-29 | Bundle Noto Sans Bengali (`app/fonts/`); PDF render blocks all network requests | Deterministic PDF offline/on any server; tests stay network-free (2.4 s instead of 12 s) |
+| 10-29 | After drafting the bot sends a one-line summary, not the full draft; code strips ``` fences | Full draft pasted in a code block was unreadable on a phone; the draft is in the case file |
+| 10-29 | Phone numbers of real people (e.g. WhatsApp recipient numbers) never go into the repo | Repo is public |
 | 10-29 | `check_eligibility.categories` is an enum built from `eligibility.json` | Model invented category keys (`unpaid_wages`, `monthly_income`) that never matched |
 
 ---
@@ -281,7 +288,16 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - [x] 3 new tests (eligibility enum, draft → case file without markdown, `whatsapp_format`) — 14 pass.
 - **Still wrong:** the model sometimes states procedure without a source (e.g. "must file in the labour court"). Needs legal data (D) + eval scenarios (G) to catch it; re-check on Muse.
 
-**Not verified yet:** WhatsApp end to end, PDF rendering, voice and photo input with a real model.
+#### Legal data, PDF, web chat (2026-10-29)
+- [x] `data/legal/labour_act_2006_wages.json` — শ্রম আইন ২০০৬ ধারা ৩০, ৩৩, ১২১, ১২৩, ১২৪ক, ১৩২, ২১৩ (7 chunks).
+- [x] `data/legal/legal_aid_act_2000.json` — আইনগত সহায়তা প্রদান আইন ২০০০ as amended 2026: ধারা ২(খ), ১৬, ২১খ, তফসিল (4 chunks).
+- [x] All copied from bdlaws.minlaw.gov.bd with URLs, `verified: false`; README documents fields and lawyer questions.
+- [x] `retrieve_law` scores `keywords`, returns `notes` and `verified`. Prompt: check notes against the person's district.
+- [x] PDF: Playwright + Chromium installed; bundled font; network blocked during render; conjuncts checked visually; facts in fixed order; BD time stamp.
+- [x] Web chat renders `*bold*` (DOM nodes, HTML stays escaped).
+- [x] Re-ran wages story: cites ধারা ১৩২ "12 months" correctly; with prompt fixes no invented gratuity/999/ধারা ৩৩; PDF attached.
+
+**Not verified yet:** WhatsApp end to end, voice and photo input with a real model.
 
 ### 6.2 Not yet implemented — in order
 
@@ -298,11 +314,11 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - [x] Chat through the agent and `/api/chat`; tools are called (see §6.1 "First real conversation").
 - [x] Tune system prompt / add code guards (first pass).
 - [ ] Try it yourself in the browser at http://localhost:8000.
-- [ ] Web chat shows WhatsApp `*bold*` as raw asterisks — render it as bold in `web/index.html`.
+- [x] Web chat renders WhatsApp `*bold*` as bold — done 10-29.
 - **Done (10-29):** the wages story gets eligibility, office and a draft through tool calls.
 
 #### C. WhatsApp end to end
-- [ ] Meta developer app (Business) → WhatsApp → test number; add recipient numbers.
+- [ ] Meta developer app (Business) → WhatsApp → test number; add recipient numbers. **In progress (user, 10-29):** user's phone to be added as recipient; then send token, phone number ID, app secret into `.env`.
 - [ ] Fill `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`.
 - [ ] ngrok → set webhook → subscribe `messages`.
 - [ ] Test text, voice note (OGG/Opus — may need ffmpeg conversion for the ASR model), image, case file document.
@@ -310,17 +326,17 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - **Done when:** a phone sends a voice note + photo and receives a Bangla reply and the PDF.
 
 #### D. Legal data (user, with lawyer)
-- [ ] `data/legal/general_legal_aid.json` — Legal Aid Services Act 2000 + regulations (eligibility, how to apply).
-- [ ] `data/legal/unpaid_wages.json` — Bangladesh Labour Act 2006 wage payment / claim sections.
+- [x] `data/legal/legal_aid_act_2000.json` — Act (as amended 2026) ধারা ২(খ), ১৬, ২১খ, তফসিল. **Regulations (income limit) still missing** — not on bdlaws.
+- [x] `data/legal/labour_act_2006_wages.json` — ধারা ৩০, ৩৩, ১২১, ১২৩, ১২৪ক, ১৩২, ২১৩.
 - [ ] `data/legal/land_notice.json` — procedure behind the notices used in the demo.
-- [ ] `data/legal/family.json` — only if time allows.
+- [ ] `data/legal/family.json` — only if time allows. Note: তফসিল item 1 (পারিবারিক আদালত আইন ২০২৩ ধারা ৫) and 8 (যৌতুক) need mandatory pre-case mediation in 10 districts — a strong, sourced answer for family cases.
 - [ ] Fill `eligibility.json` (income limit + period, real category list, documents) → `verified: true`, `verified_by`.
 - [ ] Fill `offices.json` addresses/phones/hours for 3 districts from nlaso.gov.bd → `verified: true`.
 - Sources: bdlaws.minlaw.gov.bd, nlaso.gov.bd. Copy text exactly with section numbers.
 
 #### E. Case file PDF
-- [ ] Install Playwright + Chromium; render a case with Bangla text; check conjuncts look right.
-- [ ] If Google Fonts can't load on the server, bundle Noto Sans Bengali locally.
+- [x] Install Playwright + Chromium; render a case with Bangla text; conjuncts look right — 10-29.
+- [x] Bundle Noto Sans Bengali locally; block network during render — 10-29.
 
 #### F. Switch to Meta models (when key arrives)
 - [ ] Read Muse quickstart + model list; check OpenAI compatibility (if not, adapt only `app/llm.py`).
@@ -376,6 +392,11 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 | Official legal aid income limit and categories | Unknown — from regulations, lawyer verifies | User + lawyer |
 | Stand-in model states procedure without a source | Seen in first conversation; prompt alone doesn't stop it. Legal data (D) + eval (G); re-check on Muse | — |
 | Groq free tier rate limits | Each turn waits on several 429 retries (~30–60 s). Fine for dev; not for demo | — |
+| Lawyer: does ধারা ৩৩ (grievance to employer in 30 days) apply to unpaid wages, or only ধারা ১৩২? | The model applied ৩৩ to wages in one run | Lawyer |
+| Lawyer: is the 2026 mandatory mediation (ধারা ২১খ, তফসিল) list of districts current? Dhaka/Gazipur/Narayanganj not in it as copied | Copied from bdlaws footnotes 10-29 | Lawyer |
+| Legal aid income-limit regulation (প্রবিধানমালা) — not on bdlaws; check nlaso.gov.bd / অধিদপ্তর site | Missing; `eligibility.json` income limit still null | User + lawyer |
+| Is 16430 still the helpline under the new অধিদপ্তর? | Unchecked | User |
+| Bot says "I'll tell you the address" but office address/phone are null | Fill `offices.json` (D) | User |
 | Eligibility: any matched category → `eligible: true` regardless of income | Check with lawyer whether e.g. "স্বল্প আয়ের শ্রমিক" needs an income test | User + lawyer |
 
 ---
@@ -409,3 +430,8 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
   Ran the wages story three times + once over `POST /api/chat`. Run 1: crash on draft (Groq parse error), invented eligibility categories, `**` and Bangla-digit helplines. Run 2: worked end to end but invented a 3-month deadline, garbled 999, wrong draft date, invented facts in draft, no case file. Run 3 (after fixes): correct date, clean draft, case file attached, 16430 only; one remaining unsourced claim (labour court).
   Verified: 14 tests pass; `/api/chat` turn 1 answers "not sure about the deadline, call 16430".
   **Next:** user — Meta credit claim + spend limit, Baseten request, lawyer, WhatsApp test number (§6.2 A, C). Claude — legal data from official sources with `verified: false` (D), Playwright PDF check (E), web chat bold rendering.
+- **Legal data, PDF, web chat.** User started WhatsApp setup (own phone to be added as recipient; number kept out of repo).
+  Copied 11 chunks from bdlaws (Labour Act 2006 wages sections; Legal Aid Act 2000 as amended by Act 45 of 2026). Found: NLASO is now বাংলাদেশ আইনগত সহায়তা অধিদপ্তর; applications can be filed online (ধারা ১৬); mandatory pre-case mediation for family/dowry/partition/pre-emption disputes in 10 + 30 districts via SRO 276 and 288 of 2026 (not our 3 districts). Labour Act ধারা ১৩২: wage claims within 12 months — the earlier invented "3 months" was wrong.
+  Added `keywords` (বেতন vs মজুরী) to retrieval; bundled font, offline PDF; web chat bold; Playwright in requirements.
+  Verified: 15 tests pass in 2.4 s, no network; PDF conjuncts checked; web bold escapes HTML; wages story run twice more — final run cites ধারা ১৩২ correctly with no invented claims.
+  **Next:** user — WhatsApp values into `.env`, Meta credits, Baseten, lawyer. Claude — WhatsApp end to end once `.env` has the values (C); `offices.json` and eligibility income limit from official sites (D); land notice data once the demo notice is chosen; more scenarios (G).

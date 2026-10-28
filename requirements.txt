@@ -7,5 +7,6 @@ python-dotenv==1.0.1
 jinja2==3.1.5
 pyyaml==6.0.2
 pytest==8.3.4
-# PDF case files (Bangla shaping needs a real browser engine):
-#   pip install playwright==1.49.1 && python -m playwright install chromium
+# PDF case files (Bangla shaping needs a real browser engine). After install run:
+#   python -m playwright install chromium
+playwright==1.49.1

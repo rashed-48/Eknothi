@@ -1,13 +1,12 @@
 """Tools that build up the case file (the "ek nothi")."""
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 
 from app import case_file, llm
+from app.case_file import BANGLADESH_TZ
 from app.prompts import DRAFT_PROMPT, DRAFT_SYSTEM
 from app.tools.registry import ToolContext, tool
-
-BANGLADESH_TZ = timezone(timedelta(hours=6))
 
 CASE_FIELDS = {
     "name": {"type": "string"},

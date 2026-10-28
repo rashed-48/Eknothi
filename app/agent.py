@@ -29,6 +29,7 @@ _HELPLINES = {"১৬৪৩০": "16430", "৯৯৯": "999", "১০৯": "109"
 
 def whatsapp_format(text: str) -> str:
     """Make model output safe for WhatsApp, whatever the model did with the formatting rules."""
+    text = re.sub(r"^```\w*\s*$", "", text, flags=re.MULTILINE)
     text = re.sub(r"\*\*(.+?)\*\*", r"*\1*", text)
     text = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
     for bn, en in _HELPLINES.items():
