@@ -326,9 +326,10 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - [x] Meta developer app `EkNothi` → WhatsApp use case → test number +1 555-634-4621; user's phone added as recipient — 10-30.
 - [x] `.env`: `WHATSAPP_TOKEN` (temporary, 24 h), `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` — token checked against Graph API (200, quality GREEN).
 - [x] Webhook verify (right token → challenge, wrong → 403) and signature check (unsigned POST → 403) tested locally and in the container.
-- [ ] Set webhook to the Railway URL → Verify and save → subscribe `messages` (tunnel route abandoned, §5).
+- [x] Webhook `https://eknothi.onrender.com/webhook/whatsapp` verified; only `messages` subscribed — 10-30.
 - [ ] Test text, voice note (OGG/Opus — may need ffmpeg conversion for the ASR model), image, case file document.
-- [ ] Create a permanent System User token (temporary token expires in 24 h).
+- [x] Permanent System User token `eknothi-bot` (never expires; whatsapp_business_messaging + management) in `.env` and Render — 10-30.
+- [x] App subscribed to the WABA (`POST /{waba}/subscribed_apps`, run by user) — without it Meta never forwards messages — 10-30.
 - **Done when:** a phone sends a voice note + photo and receives a Bangla reply and the PDF.
 
 #### D. Legal data (user, with lawyer)
@@ -363,7 +364,7 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - [x] Built and ran the image locally: `/health`, web page, webhook verify/signature, PDF rendered in container (Bangla OK, BD time), one `/api/chat` turn through Groq.
 - [x] `render.yaml` blueprint (free, Singapore, Docker, health check, secrets prompted with `sync: false`) — 10-30.
 - [ ] ~~User: Railway project~~ — Railway sign-ups closed (10-30).
-- [ ] User: Render → New → Blueprint → repo → fill values from `.env` → Apply; check `/health`.
+- [x] Deployed on Render: https://eknothi.onrender.com — `/health`, web chat, webhook verify/signature and one chat turn checked from outside — 10-30.
 - [ ] Point WhatsApp webhook to the deployed URL. (`PUBLIC_BASE_URL` is not used by the code; no need to set it.)
 - [ ] Test the full flow on a phone 3 times.
 
@@ -408,7 +409,7 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 | Is 16430 still the helpline under the new অধিদপ্তর? | Unchecked | User |
 | Bot says "I'll tell you the address" but office address/phone are null | Fill `offices.json` (D) | User |
 | Render free sleeps after 15 min and has no disk | First WhatsApp message / web visit after idle waits ~50 s (Meta may retry; dedupe handles it); case files and history reset on restart. Decide on Starter + disk before judging | User |
-| Temporary WhatsApp token expires ~24 h after 10-29 evening | Make a permanent System User token before relying on the deployment (§6.2 C) | User |
+| ~~Temporary WhatsApp token expires~~ | Done: permanent System User token (10-30) | — |
 | Public `/api/chat` spends our model key; anyone with the link can use it | Acceptable for the demo; add a simple rate limit if abused | — |
 | Bot sometimes gives advice-like wording ("settlement first is better") or unsourced consequences ("hard to claim if late" — ধারা ১৩২(২) proviso allows late filing with sufficient cause) | Seen 10-30; add eval scenarios (G) | — |
 | Eligibility: any matched category → `eligible: true` regardless of income | Check with lawyer whether e.g. "স্বল্প আয়ের শ্রমিক" needs an income test | User + lawyer |
@@ -458,4 +459,6 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
   **Next:** user — Railway project + variables + volume + domain; then Meta webhook to `https://<domain>/webhook/whatsapp`, subscribe `messages`; permanent System User token. Claude — end-to-end phone test (text, voice, photo, PDF) once the webhook is set.
 - **Railway sign-ups disabled** ("Sign ups are currently disabled", after their Oct 21 incident). User chose **Render free**. Added `render.yaml`; README deploy section now Render. 15 tests pass.
   **Next:** user — Render Blueprint deploy, then Meta webhook to `https://<service>.onrender.com/webhook/whatsapp`; Claude — phone end-to-end test.
+- **Render live** at https://eknothi.onrender.com (health, web chat, webhook checked from outside). First WhatsApp "hello" got no reply. Diagnosed read-only via Graph API: (1) temporary token had expired → user made a permanent System User token, put in `.env` + Render; (2) the WABA forwarded only to Meta's "WA DevX Webhook Events" app, not EkNothi → user ran `POST /1110112525252982/subscribed_apps` (Claude's attempt was blocked by auto mode; changing account settings is the user's call). Confirmed EkNothi now subscribed.
+  **Next:** phone test — text, voice note, photo, PDF.
 - User verified the webhook and subscribed many fields. Only `messages` is needed; `whatsapp.parse` now ignores every other field (echoes/history could otherwise get replies). Test added — 16 pass. Advised unsubscribing the rest (each event wakes the free server).
