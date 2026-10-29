@@ -458,3 +458,4 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
   **Next:** user — Railway project + variables + volume + domain; then Meta webhook to `https://<domain>/webhook/whatsapp`, subscribe `messages`; permanent System User token. Claude — end-to-end phone test (text, voice, photo, PDF) once the webhook is set.
 - **Railway sign-ups disabled** ("Sign ups are currently disabled", after their Oct 21 incident). User chose **Render free**. Added `render.yaml`; README deploy section now Render. 15 tests pass.
   **Next:** user — Render Blueprint deploy, then Meta webhook to `https://<service>.onrender.com/webhook/whatsapp`; Claude — phone end-to-end test.
+- User verified the webhook and subscribed many fields. Only `messages` is needed; `whatsapp.parse` now ignores every other field (echoes/history could otherwise get replies). Test added — 16 pass. Advised unsubscribing the rest (each event wakes the free server).
