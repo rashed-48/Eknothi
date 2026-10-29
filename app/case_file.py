@@ -79,6 +79,15 @@ def _to_pdf(src: Path, dst: Path) -> bool:
             page.route("**/*", lambda route: route.continue_() if route.request.url.startswith("file:")
                        else route.abort())
             page.goto(src.resolve().as_uri(), wait_until="load")
+            # Text stays invisible until its web font has loaded. On a slow host (Render free) the
+            # load event fires first and the PDF came out blank, so wait for the font explicitly.
+            loaded = page.evaluate("""async () => {
+                await document.fonts.load('16px "EkNothi Bengali"', 'অ');
+                await document.fonts.ready;
+                return document.fonts.check('16px "EkNothi Bengali"', 'অ');
+            }""")
+            if not loaded:
+                log.warning("bundled Bangla font did not load; PDF may lack text")
             page.pdf(path=str(dst), format="A4", print_background=True,
                      margin={"top": "16mm", "bottom": "16mm", "left": "14mm", "right": "14mm"})
             browser.close()
