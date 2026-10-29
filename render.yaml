@@ -1,0 +1,28 @@
+# Render blueprint: New → Blueprint → this repo. Render asks for every `sync: false` value during setup.
+# VISION_* / ASR_* are optional (they fall back to LLM_*); add them in the dashboard when needed.
+# Free plan: sleeps after 15 min idle (~50 s cold start) and has no disk, so /data resets on restart.
+services:
+  - type: web
+    name: eknothi
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: LLM_BASE_URL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: GRAPH_API_VERSION
+        value: v21.0

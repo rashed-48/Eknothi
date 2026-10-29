@@ -73,17 +73,18 @@ Open http://localhost:8000 for the web chat. Run tests with `pytest`.
    set the webhook to `https://<host>/webhook/whatsapp` with your `WHATSAPP_VERIFY_TOKEN`; subscribe to `messages`.
 4. Send "hi" to the test number. Send "reset" or "নতুন" to start a new case.
 
-## Deploy (Railway)
+## Deploy (Render)
 
-The [Dockerfile](Dockerfile) bundles Chromium for the PDF case files; [railway.json](railway.json) sets the health check.
+The [Dockerfile](Dockerfile) bundles Chromium for the PDF case files; [render.yaml](render.yaml) describes the service.
 
-1. railway.com → **New Project → Deploy from GitHub repo** → this repo.
-2. Service → **Variables → Raw Editor**: paste the contents of your `.env`.
-3. Service → **Add Volume**, mount path `/data` (conversations and case files live there).
-4. Service → **Settings → Networking → Generate Domain**. The web chat is at that address.
-5. Set the WhatsApp webhook to `https://<domain>/webhook/whatsapp`.
+1. render.com → **New → Blueprint** → this repo.
+2. Fill in the values Render asks for (the same as your `.env`) → **Apply**.
+3. When the deploy is live, open `https://<service>.onrender.com/health`; the web chat is at the root.
+4. Set the WhatsApp webhook to `https://<service>.onrender.com/webhook/whatsapp`.
 
-Any Docker host works the same way: set the `.env` variables, mount a volume at `/data`, expose `$PORT`.
+The free plan sleeps after 15 minutes idle and has no disk; a paid plan with a disk mounted at `/data` keeps
+conversations and case files. Any Docker host works the same way ([railway.json](railway.json) is included):
+set the `.env` variables, mount a volume at `/data`, expose `$PORT`.
 
 ## Evaluation
 

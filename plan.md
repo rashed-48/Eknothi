@@ -2,7 +2,7 @@
 
 > **This file is the single source of truth for the project.**
 > Read it fully before starting any work. Update it after every piece of work (see §0).
-> Last updated: **2026-10-30**, Docker image + Railway deploy config; WhatsApp credentials set (Bangladesh time)
+> Last updated: **2026-10-30**, switched host to Render free (Railway sign-ups closed) (Bangladesh time)
 
 ---
 
@@ -258,6 +258,7 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 | 10-30 | Host on **Railway** from GitHub with the Dockerfile (+ volume at `/data`), deployed early instead of using a local tunnel | Tunnels failed on this machine: ISP/network resets `api.trycloudflare.com`; ngrok 3.39 flagged by Defender as PUA (not overridden); Claude Code auto mode blocks starting inbound tunnels. A deployed URL is needed anyway for the live product link; Railway doesn't sleep (Render free does, ~50 s cold start) and has volumes |
 | 10-30 | Base image `python:3.11-slim-bookworm` | Playwright 1.49 `--with-deps` fails on Debian 13 (renamed font packages) |
 | 10-30 | `railway.json` sets health check `/health` and restart policy | Fewer manual dashboard steps |
+| 10-30 | **Supersedes Railway:** host on **Render free** via `render.yaml` blueprint (Docker, Singapore, `/health`) — user's choice | Railway sign-ups disabled after its Oct 21 incident. Render free: no card, but sleeps after 15 min (~50 s cold start) and no disk (data resets on restart). Consider Render Starter + disk for judging (Nov 5–8). `railway.json` kept for any later move |
 | 10-29 | `check_eligibility.categories` is an enum built from `eligibility.json` | Model invented category keys (`unpaid_wages`, `monthly_income`) that never matched |
 
 ---
@@ -360,7 +361,9 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 #### H. Deployment
 - [x] `Dockerfile` (bookworm, Chromium headless shell, `/data` volume, `$PORT`), `.dockerignore`, `railway.json` — 10-30.
 - [x] Built and ran the image locally: `/health`, web page, webhook verify/signature, PDF rendered in container (Bangla OK, BD time), one `/api/chat` turn through Groq.
-- [ ] User: Railway project from GitHub, paste `.env` into Variables, volume at `/data`, generate domain.
+- [x] `render.yaml` blueprint (free, Singapore, Docker, health check, secrets prompted with `sync: false`) — 10-30.
+- [ ] ~~User: Railway project~~ — Railway sign-ups closed (10-30).
+- [ ] User: Render → New → Blueprint → repo → fill values from `.env` → Apply; check `/health`.
 - [ ] Point WhatsApp webhook to the deployed URL. (`PUBLIC_BASE_URL` is not used by the code; no need to set it.)
 - [ ] Test the full flow on a phone 3 times.
 
@@ -404,6 +407,7 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 | Legal aid income-limit regulation (প্রবিধানমালা) — not on bdlaws; check nlaso.gov.bd / অধিদপ্তর site | Missing; `eligibility.json` income limit still null | User + lawyer |
 | Is 16430 still the helpline under the new অধিদপ্তর? | Unchecked | User |
 | Bot says "I'll tell you the address" but office address/phone are null | Fill `offices.json` (D) | User |
+| Render free sleeps after 15 min and has no disk | First WhatsApp message / web visit after idle waits ~50 s (Meta may retry; dedupe handles it); case files and history reset on restart. Decide on Starter + disk before judging | User |
 | Temporary WhatsApp token expires ~24 h after 10-29 evening | Make a permanent System User token before relying on the deployment (§6.2 C) | User |
 | Public `/api/chat` spends our model key; anyone with the link can use it | Acceptable for the demo; add a simple rate limit if abused | — |
 | Bot sometimes gives advice-like wording ("settlement first is better") or unsourced consequences ("hard to claim if late" — ধারা ১৩২(২) proviso allows late filing with sufficient cause) | Seen 10-30; add eval scenarios (G) | — |
@@ -452,3 +456,5 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
   Added `Dockerfile`, `.dockerignore`, `railway.json`, README deploy section. Built image (1.33 GB) after pinning bookworm; ran container: health, web, webhook verify/signature, PDF with Bangla, one chat turn — all OK.
   Verified: 15 tests pass.
   **Next:** user — Railway project + variables + volume + domain; then Meta webhook to `https://<domain>/webhook/whatsapp`, subscribe `messages`; permanent System User token. Claude — end-to-end phone test (text, voice, photo, PDF) once the webhook is set.
+- **Railway sign-ups disabled** ("Sign ups are currently disabled", after their Oct 21 incident). User chose **Render free**. Added `render.yaml`; README deploy section now Render. 15 tests pass.
+  **Next:** user — Render Blueprint deploy, then Meta webhook to `https://<service>.onrender.com/webhook/whatsapp`; Claude — phone end-to-end test.
