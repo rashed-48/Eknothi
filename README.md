@@ -58,7 +58,7 @@ Three case types: **unpaid wages**, **land notices**, **family cases**. Anything
 python -m venv .venv
 .venv\Scripts\activate          # Windows  (source .venv/bin/activate on macOS/Linux)
 pip install -r requirements.txt
-pip install playwright && python -m playwright install chromium   # for PDF case files
+python -m playwright install chromium   # for PDF case files
 cp .env.example .env            # fill in model + WhatsApp settings
 uvicorn app.main:app --reload
 ```
@@ -69,9 +69,21 @@ Open http://localhost:8000 for the web chat. Run tests with `pytest`.
 
 1. developers.facebook.com → create an app (Business) → add **WhatsApp** → **API Setup**.
 2. Copy the test phone number ID and access token into `.env`; add your own number as a recipient.
-3. Expose the server (`ngrok http 8000`) and set the webhook to `https://<host>/webhook/whatsapp`
-   with your `WHATSAPP_VERIFY_TOKEN`; subscribe to `messages`.
+3. Put the server on a public HTTPS address (deploy it, see below, or use a tunnel such as `ngrok http 8000`) and
+   set the webhook to `https://<host>/webhook/whatsapp` with your `WHATSAPP_VERIFY_TOKEN`; subscribe to `messages`.
 4. Send "hi" to the test number. Send "reset" or "নতুন" to start a new case.
+
+## Deploy (Railway)
+
+The [Dockerfile](Dockerfile) bundles Chromium for the PDF case files; [railway.json](railway.json) sets the health check.
+
+1. railway.com → **New Project → Deploy from GitHub repo** → this repo.
+2. Service → **Variables → Raw Editor**: paste the contents of your `.env`.
+3. Service → **Add Volume**, mount path `/data` (conversations and case files live there).
+4. Service → **Settings → Networking → Generate Domain**. The web chat is at that address.
+5. Set the WhatsApp webhook to `https://<domain>/webhook/whatsapp`.
+
+Any Docker host works the same way: set the `.env` variables, mount a volume at `/data`, expose `$PORT`.
 
 ## Evaluation
 

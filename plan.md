@@ -2,7 +2,7 @@
 
 > **This file is the single source of truth for the project.**
 > Read it fully before starting any work. Update it after every piece of work (see §0).
-> Last updated: **2026-10-29**, after legal data + PDF (Bangladesh time)
+> Last updated: **2026-10-30**, Docker image + Railway deploy config; WhatsApp credentials set (Bangladesh time)
 
 ---
 
@@ -218,7 +218,8 @@ pytest                        # tests
 python -m eval.run_eval       # scenarios → CSV for lawyer
 ```
 PDF: Playwright is in requirements; also run `python -m playwright install chromium` once.
-WhatsApp local testing: `ngrok http 8000`, webhook URL `https://<ngrok>/webhook/whatsapp`.
+WhatsApp: webhook URL `https://<deployed host>/webhook/whatsapp` (local tunnels don't work on this machine, see §5).
+Docker: `docker build -t eknothi .` then `docker run --env-file .env -p 8000:8000 -v eknothi-data:/data eknothi`. Deploy steps in README.
 Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 
 **Case JSON schema** (`store.new_case()`): `case_id`, `file_token` (unguessable file name), `created_at`, `facts{name, phone, district, case_type, monthly_income_bdt, employer, opposing_party, key_dates, deadline, summary, help_wanted}`, `documents[]`, `transcripts[]`, `sources[]`, `eligibility`, `office`, `draft{kind,text}`, `escalated{reason,urgent}`.
@@ -254,6 +255,9 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 | 10-29 | Bundle Noto Sans Bengali (`app/fonts/`); PDF render blocks all network requests | Deterministic PDF offline/on any server; tests stay network-free (2.4 s instead of 12 s) |
 | 10-29 | After drafting the bot sends a one-line summary, not the full draft; code strips ``` fences | Full draft pasted in a code block was unreadable on a phone; the draft is in the case file |
 | 10-29 | Phone numbers of real people (e.g. WhatsApp recipient numbers) never go into the repo | Repo is public |
+| 10-30 | Host on **Railway** from GitHub with the Dockerfile (+ volume at `/data`), deployed early instead of using a local tunnel | Tunnels failed on this machine: ISP/network resets `api.trycloudflare.com`; ngrok 3.39 flagged by Defender as PUA (not overridden); Claude Code auto mode blocks starting inbound tunnels. A deployed URL is needed anyway for the live product link; Railway doesn't sleep (Render free does, ~50 s cold start) and has volumes |
+| 10-30 | Base image `python:3.11-slim-bookworm` | Playwright 1.49 `--with-deps` fails on Debian 13 (renamed font packages) |
+| 10-30 | `railway.json` sets health check `/health` and restart policy | Fewer manual dashboard steps |
 | 10-29 | `check_eligibility.categories` is an enum built from `eligibility.json` | Model invented category keys (`unpaid_wages`, `monthly_income`) that never matched |
 
 ---
@@ -318,9 +322,10 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - **Done (10-29):** the wages story gets eligibility, office and a draft through tool calls.
 
 #### C. WhatsApp end to end
-- [ ] Meta developer app (Business) → WhatsApp → test number; add recipient numbers. **In progress (user, 10-29):** user's phone to be added as recipient; then send token, phone number ID, app secret into `.env`.
-- [ ] Fill `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`.
-- [ ] ngrok → set webhook → subscribe `messages`.
+- [x] Meta developer app `EkNothi` → WhatsApp use case → test number +1 555-634-4621; user's phone added as recipient — 10-30.
+- [x] `.env`: `WHATSAPP_TOKEN` (temporary, 24 h), `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` — token checked against Graph API (200, quality GREEN).
+- [x] Webhook verify (right token → challenge, wrong → 403) and signature check (unsigned POST → 403) tested locally and in the container.
+- [ ] Set webhook to the Railway URL → Verify and save → subscribe `messages` (tunnel route abandoned, §5).
 - [ ] Test text, voice note (OGG/Opus — may need ffmpeg conversion for the ASR model), image, case file document.
 - [ ] Create a permanent System User token (temporary token expires in 24 h).
 - **Done when:** a phone sends a voice note + photo and receives a Bangla reply and the PDF.
@@ -353,8 +358,10 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - [ ] Send CSV to lawyer; apply fixes; re-run; record final numbers here.
 
 #### H. Deployment
-- [ ] Deploy to Render / Railway / Fly.io (needs persistent disk for `var/`, Chromium for PDF).
-- [ ] Point WhatsApp webhook to the deployed URL; set `PUBLIC_BASE_URL`.
+- [x] `Dockerfile` (bookworm, Chromium headless shell, `/data` volume, `$PORT`), `.dockerignore`, `railway.json` — 10-30.
+- [x] Built and ran the image locally: `/health`, web page, webhook verify/signature, PDF rendered in container (Bangla OK, BD time), one `/api/chat` turn through Groq.
+- [ ] User: Railway project from GitHub, paste `.env` into Variables, volume at `/data`, generate domain.
+- [ ] Point WhatsApp webhook to the deployed URL. (`PUBLIC_BASE_URL` is not used by the code; no need to set it.)
 - [ ] Test the full flow on a phone 3 times.
 
 #### I. Submission package
@@ -397,6 +404,9 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 | Legal aid income-limit regulation (প্রবিধানমালা) — not on bdlaws; check nlaso.gov.bd / অধিদপ্তর site | Missing; `eligibility.json` income limit still null | User + lawyer |
 | Is 16430 still the helpline under the new অধিদপ্তর? | Unchecked | User |
 | Bot says "I'll tell you the address" but office address/phone are null | Fill `offices.json` (D) | User |
+| Temporary WhatsApp token expires ~24 h after 10-29 evening | Make a permanent System User token before relying on the deployment (§6.2 C) | User |
+| Public `/api/chat` spends our model key; anyone with the link can use it | Acceptable for the demo; add a simple rate limit if abused | — |
+| Bot sometimes gives advice-like wording ("settlement first is better") or unsourced consequences ("hard to claim if late" — ধারা ১৩২(২) proviso allows late filing with sufficient cause) | Seen 10-30; add eval scenarios (G) | — |
 | Eligibility: any matched category → `eligible: true` regardless of income | Check with lawyer whether e.g. "স্বল্প আয়ের শ্রমিক" needs an income test | User + lawyer |
 
 ---
@@ -435,3 +445,10 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
   Added `keywords` (বেতন vs মজুরী) to retrieval; bundled font, offline PDF; web chat bold; Playwright in requirements.
   Verified: 15 tests pass in 2.4 s, no network; PDF conjuncts checked; web bold escapes HTML; wages story run twice more — final run cites ধারা ১৩২ correctly with no invented claims.
   **Next:** user — WhatsApp values into `.env`, Meta credits, Baseten, lawyer. Claude — WhatsApp end to end once `.env` has the values (C); `offices.json` and eligibility income limit from official sites (D); land notice data once the demo notice is chosen; more scenarios (G).
+
+### 2026-10-30
+- **WhatsApp credentials + deployment setup.** User created the Meta app, added their phone as recipient; token, phone number ID, app secret, verify token in `.env` (token verified with Graph API). Local server on 8001 passed webhook verify + signature checks.
+  Tunnel attempts failed: ngrok 3.3.1 too old → updated to 3.39.13 → blocked by Windows Defender as PUA (left to the user, not overridden); cloudflared quick tunnel → `api.trycloudflare.com` connection reset by the network; Claude Code auto mode also blocks starting inbound tunnels. Decided to deploy now (§5).
+  Added `Dockerfile`, `.dockerignore`, `railway.json`, README deploy section. Built image (1.33 GB) after pinning bookworm; ran container: health, web, webhook verify/signature, PDF with Bangla, one chat turn — all OK.
+  Verified: 15 tests pass.
+  **Next:** user — Railway project + variables + volume + domain; then Meta webhook to `https://<domain>/webhook/whatsapp`, subscribe `messages`; permanent System User token. Claude — end-to-end phone test (text, voice, photo, PDF) once the webhook is set.

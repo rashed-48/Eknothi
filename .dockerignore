@@ -1,0 +1,12 @@
+.env
+.git
+.venv
+venv
+var
+**/__pycache__
+**/*.pyc
+.pytest_cache
+eval/results_*.csv
+scenarios/images/private
+.vscode
+.idea
