@@ -43,6 +43,9 @@ def parse(payload: dict) -> list[Incoming]:
     out = []
     for entry in payload.get("entry", []):
         for change in entry.get("changes", []):
+            # Only new incoming messages; echoes of our own sends or history syncs must never get a reply.
+            if change.get("field") != "messages":
+                continue
             for m in change.get("value", {}).get("messages", []):
                 kind = m.get("type")
                 msg = Incoming(message_id=m["id"], sender=m["from"], kind=kind)

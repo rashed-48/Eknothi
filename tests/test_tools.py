@@ -118,3 +118,16 @@ def test_whatsapp_format():
     from app.agent import whatsapp_format
     text = "## শিরোনাম\n**জরুরি:** ১৬৪৩০ বা ৯৯৯, কিন্তু ১৬৪৩০৫ নয়\n```text\nখসড়া\n```"
     assert whatsapp_format(text) == "শিরোনাম\n*জরুরি:* 16430 বা 999, কিন্তু ১৬৪৩০৫ নয়\n\nখসড়া"
+
+
+def test_whatsapp_parse_only_replies_to_incoming_messages():
+    from app.whatsapp import parse
+    incoming = {"id": "wamid.1", "from": "8801000000000", "type": "text", "text": {"body": "হ্যালো"}}
+    payload = {"entry": [{"changes": [
+        {"field": "messages", "value": {"messages": [incoming]}},
+        {"field": "messages", "value": {"statuses": [{"id": "wamid.0", "status": "delivered"}]}},
+        {"field": "message_echoes", "value": {"messages": [dict(incoming, id="wamid.2")]}},
+        {"field": "history", "value": {"messages": [dict(incoming, id="wamid.3")]}},
+    ]}]}
+    msgs = parse(payload)
+    assert [(m.message_id, m.text) for m in msgs] == [("wamid.1", "হ্যালো")]
