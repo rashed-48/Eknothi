@@ -2,7 +2,7 @@
 
 > **This file is the single source of truth for the project.**
 > Read it fully before starting any work. Update it after every piece of work (see §0).
-> Last updated: **2026-10-30**, switched host to Render free (Railway sign-ups closed) (Bangladesh time)
+> Last updated: **2026-10-30**, WhatsApp live on Render; blank-PDF fix (Bangladesh time)
 
 ---
 
@@ -327,7 +327,7 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
 - [x] `.env`: `WHATSAPP_TOKEN` (temporary, 24 h), `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` — token checked against Graph API (200, quality GREEN).
 - [x] Webhook verify (right token → challenge, wrong → 403) and signature check (unsigned POST → 403) tested locally and in the container.
 - [x] Webhook `https://eknothi.onrender.com/webhook/whatsapp` verified; only `messages` subscribed — 10-30.
-- [ ] Test text, voice note (OGG/Opus — may need ffmpeg conversion for the ASR model), image, case file document.
+- [ ] Test text (✅ 10-30), case file document (PDF fixed for Render 10-30, re-test on phone), image, voice note (OGG/Opus — may need ffmpeg conversion; no ASR model configured yet).
 - [x] Permanent System User token `eknothi-bot` (never expires; whatsapp_business_messaging + management) in `.env` and Render — 10-30.
 - [x] App subscribed to the WABA (`POST /{waba}/subscribed_apps`, run by user) — without it Meta never forwards messages — 10-30.
 - **Done when:** a phone sends a voice note + photo and receives a Bangla reply and the PDF.
@@ -461,4 +461,7 @@ Chat commands: "reset" / "নতুন" / "শুরু" start a new case.
   **Next:** user — Render Blueprint deploy, then Meta webhook to `https://<service>.onrender.com/webhook/whatsapp`; Claude — phone end-to-end test.
 - **Render live** at https://eknothi.onrender.com (health, web chat, webhook checked from outside). First WhatsApp "hello" got no reply. Diagnosed read-only via Graph API: (1) temporary token had expired → user made a permanent System User token, put in `.env` + Render; (2) the WABA forwarded only to Meta's "WA DevX Webhook Events" app, not EkNothi → user ran `POST /1110112525252982/subscribed_apps` (Claude's attempt was blocked by auto mode; changing account settings is the user's call). Confirmed EkNothi now subscribed.
   **Next:** phone test — text, voice note, photo, PDF.
+- **WhatsApp text works end to end** (user's phone ↔ Render). **Case file PDF was blank on Render** (1.3 KB, no text): the load event fired before the bundled font loaded on the slow free instance, so text was still invisible at print. Fix: wait on `document.fonts.load/ready` before `page.pdf` (commit 84d9faa). Verified on Render: escalation case file 173 KB, all Bangla visible.
+  Also seen: escalation reason written in English and no facts saved before escalating → prompt now asks for update_case + Bangla reason before escalate_to_human. Safety path on Render correct (999/109 first, escalated).
+  **Next:** user repeats wages story + "হ্যাঁ, আবেদন লিখে দিন" on WhatsApp to get the PDF; then photo; voice needs an ASR model.
 - User verified the webhook and subscribed many fields. Only `messages` is needed; `whatsapp.parse` now ignores every other field (echoes/history could otherwise get replies). Test added — 16 pass. Advised unsubscribing the rest (each event wakes the free server).
